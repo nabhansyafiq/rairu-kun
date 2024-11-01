@@ -17,11 +17,14 @@ RUN curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
     | tee /etc/apt/sources.list.d/ngrok.list \
     && apt update && apt install -y ngrok
 
+# Verify ngrok installation and move it to /usr/bin if not there
+RUN if [ ! -f /usr/bin/ngrok ]; then cp $(which ngrok) /usr/bin/ngrok; fi
+
 # Configure SSH and create a start script
 RUN mkdir /run/sshd \
     && echo "/usr/bin/ngrok tcp --authtoken ${NGROK_TOKEN} --region ${REGION} 22 &" >>/openssh.sh \
     && echo "sleep 5" >> /openssh.sh \
-    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; print(\\\"ssh info:\\\n\\\",\\\"ssh\\\",\\\"root@\\\"+json.load(sys.stdin)['tunnels'][0]['public_url'][6:].replace(':', ' -p '),\\\"\\\nROOT Password:123\\\")\" || echo \"\nError: NGROK_TOKEN missing or invalid\"" >> /openssh.sh \
+    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; data = sys.stdin.read(); print(\\\"ssh info:\\\n\\\",\\\"ssh\\\",\\\"root@\\\"+json.loads(data)['tunnels'][0]['public_url'][6:].replace(':', ' -p '),\\\"\\\nROOT Password:123\\\") if data else print(\\\"\\nError: NGROK_TOKEN missing or invalid\\\")\"" >> /openssh.sh \
     && echo '/usr/sbin/sshd -D' >>/openssh.sh \
     && echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config \
     && echo root:123 | chpasswd \
