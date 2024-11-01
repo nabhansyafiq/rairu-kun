@@ -1,8 +1,8 @@
 # Use Debian as the base image
 FROM debian
 
-# Define variables for ngrok token and region
-ARG NGROK_TOKEN
+# Define variables for ngrok token, region, and SSH password
+ARG NGROK_TOKEN=2oELby8CSrz9THvA5bCQEK3frqX_3Auhy5ZXqFKwZCPLSzBuf
 ARG REGION=ap
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -21,10 +21,10 @@ RUN curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
 RUN mkdir /run/sshd \
     && echo "/usr/bin/ngrok tcp --authtoken ${NGROK_TOKEN} --region ${REGION} 22 &" >>/openssh.sh \
     && echo "sleep 5" >> /openssh.sh \
-    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; print(\\\"ssh info:\\\n\\\",\\\"ssh\\\",\\\"root@\\\"+json.load(sys.stdin)['tunnels'][0]['public_url'][6:].replace(':', ' -p '),\\\"\\\nROOT Password:craxid\\\")\" || echo \"\nError: NGROK_TOKEN missing or invalid\"" >> /openssh.sh \
+    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; print(\\\"ssh info:\\\n\\\",\\\"ssh\\\",\\\"root@\\\"+json.load(sys.stdin)['tunnels'][0]['public_url'][6:].replace(':', ' -p '),\\\"\\\nROOT Password:123\\\")\" || echo \"\nError: NGROK_TOKEN missing or invalid\"" >> /openssh.sh \
     && echo '/usr/sbin/sshd -D' >>/openssh.sh \
     && echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config \
-    && echo root:craxid | chpasswd \
+    && echo root:123 | chpasswd \
     && chmod 755 /openssh.sh
 
 # Expose necessary ports
